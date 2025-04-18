@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking North Korean Cyber Operations: An Open-Source Intelligence Aggregator and Analysis</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+      
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+        
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>Open-Source Intelligence Aggregator and Analysis</h1>
+    </header>
+
+    <div class="dashboard-container">
+
+        <!-- Filters & Summary Column -->
+        <aside class="controls-column">
+            <div id="filters-panel" class="control-panel">
+                <h2>Filters</h2>
+                <div class="filter-group">
+                    <label for="year-start-filter">Year Range:</label>
+                    <select id="year-start-filter">
+                        <option value="all">Start</option>
+                        <!-- Options populated by JS -->
+                    </select>
+                    <span>to</span>
+                    <select id="year-end-filter">
+                        <option value="all">End</option>
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="group-filter">Attacker Group:</label>
+                    <select id="group-filter">
+                        <option value="all">All Groups</option>
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="sector-filter">Target Sector:</label>
+                    <select id="sector-filter">
+                        <option value="all">All Sectors</option>
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                 <div class="filter-group">
+                    <label for="loss-filter">Loss Type:</label>
+                    <select id="loss-filter">
+                        <option value="all">All Loss Types</option>
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <button id="reset-filters">Reset Filters</button>
+            </div>
+
+            <div id="summary-stats" class="control-panel">
+                <h2>Summary</h2>
+                <p>Total Incidents: <span id="stat-total-incidents">--</span></p>
+                <p>Total Est. Loss: <span id="stat-total-loss">--</span></p>
+                <p>Top Group: <span id="stat-top-group">--</span></p>
+                <p>Top Sector: <span id="stat-top-sector">--</span></p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content-area">
+            <nav class="tab-navigation">
+                <ul>
+                    <li><button class="tab-button active" data-tab="overview">Overview</button></li>
+                    <li><button class="tab-button" data-tab="map">Threat Map</button></li>
+                    <li><button class="tab-button" data-tab="ttp">TTP Analysis</button></li>
+                    <li><button class="tab-button" data-tab="explorer">Incident Explorer</button></li>
+                </ul>
+            </nav>
+
+            <!-- Loading/Error Indicators -->
+            <div id="loading">Loading data... <div class="spinner"></div></div>
+            <div id="error" style="display: none;"></div>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <div id="tab-overview" class="tab-pane active">
+                    <h2>Dashboard Overview</h2>
+                    <div class="chart-row">
+                        <div class="chart-container half-width">
+                            <h3>Incidents & Est. Loss Over Time</h3>
+                            <canvas id="overview-time-chart"></canvas>
+                            <div class="chart-controls">
+                                <label for="stack-by-select">Stack Bars By:</label>
+                                <select id="stack-by-select">
+                                    <option value="none">None</option>
+                                    <option value="primary_group">Attacker Group</option>
+                                    <option value="loss_type">Loss Type</option>
+                                    <!-- Add sector if useful -->
+                                </select>
+                             </div>
+                        </div>
+                        <div class="chart-container half-width">
+                             <h3>Top Attacker Groups</h3>
+                             <canvas id="overview-group-chart"></canvas>
+                        </div>
+                    </div>
+                     <div class="chart-row">
+                        <div class="chart-container half-width">
+                             <h3>Top Target Sectors</h3>
+                            <canvas id="overview-sector-chart"></canvas>
+                        </div>
+                        <div class="chart-container half-width">
+                             <h3>Top Loss Types</h3>
+                             <canvas id="overview-loss-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-map" class="tab-pane">
+                    <h2>Threat Map</h2>
+                     <div id="map-legend" class="map-legend">
+                        <h4>Legend (Dominant Loss Type)</h4>
+                        <!-- Legend items populated by JS -->
+                    </div>
+                    <div id="map"></div>
+
+                </div>
+
+                <div id="tab-ttp" class="tab-pane">
+                    <h2>TTP Analysis (MITRE ATT&CK)</h2>
+                    <button id="export-navigator">Export for ATT&CK Navigator</button>
+                    <div class="ttp-row">
+                         <div class="chart-container third-width">
+                             <h3>Top Tactics</h3>
+                            <canvas id="ttp-tactic-chart"></canvas>
+                         </div>
+                         <div class="chart-container two-thirds-width">
+                             <h3>Top Techniques</h3>
+                             <canvas id="ttp-technique-chart"></canvas>
+                        </div>
+                    </div>
+                    <h3>ATT&CK Matrix</h3>
+                    <div id="mitre-matrix-container" class="matrix-container">
+                        <!-- Matrix table will be generated here by JS -->
+                        <p class="matrix-loading">Generating Matrix...</p>
+                    </div>
+                </div>
+
+                <div id="tab-explorer" class="tab-pane">
+                    <h2>Incident Explorer (<span id="explorer-incident-count">0</span> Incidents)</h2>
+                    <div class="explorer-controls">
+                        <label>View Mode:</label>
+                        <button id="view-table-btn" class="view-toggle-btn active">Table</button>
+                        <button id="view-timeline-btn" class="view-toggle-btn">Timeline</button>
+                    </div>
+
+                    <div id="explorer-table-view" class="explorer-view active">
+                        <table id="incident-table" class="display compact" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Incident Name</th>
+                                    <th>Group</th>
+                                    <th>Sectors</th>
+                                    <th>Countries</th>
+                                    <th>Loss Type</th>
+                                    <th>Est. Loss</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Table rows generated by JS (DataTables) -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="explorer-timeline-view" class="explorer-view">
+                        <div id="timeline" class="timeline">
+                             <p class="timeline-empty">No incidents match filters.</p>
+                            <!-- Timeline items injected here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Incident Detail Modal -->
+    <div id="incident-detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close-button">×</span>
+            <div id="modal-incident-content">
+                <!-- Detailed incident content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script> <!-- Needed for DataTables -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
